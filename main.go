@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
@@ -47,6 +48,8 @@ func main() {
 		logrus.Fatalf("opening discord connection: %v", err)
 	}
 
+	go cron(dg)
+
 	// Wait here until CTRL-C or other term signal is received.
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
@@ -54,6 +57,19 @@ func main() {
 
 	// Cleanly close down the Discord session.
 	dg.Close()
+}
+
+func cron(s *discordgo.Session) {
+	// TODO since we don't have any real open resources at this point,
+	// I'm just quiting here. If we ever change that, we'll need to
+	// exit clenanly.
+	for {
+		select {
+		// Check once every 5 minutes
+		case <-time.After(5 * time.Minute):
+			getYoutubeVideos(s)
+		}
+	}
 }
 
 // This function will be called (due to AddHandler above) every time a new

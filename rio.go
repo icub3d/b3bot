@@ -17,8 +17,8 @@ type raiderIOChar struct {
 	Region   string
 	Realm    string
 	Profile  string `json:"profile_url"`
-	Gear     map[string]int
-	MPScores map[string]int `json:"mythic_plus_scores"`
+	Gear     map[string]float64
+	MPScores map[string]float64 `json:"mythic_plus_scores"`
 }
 
 var rio = &cmd{
