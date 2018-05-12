@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/sirupsen/logrus"
 )
 
 func init() {
@@ -23,7 +25,7 @@ type raiderIOChar struct {
 
 var rio = &cmd{
 	name: "rio",
-	help: " - [region] [realm] character - get the raider.io score and link for the given character. You can pass the region and realm as well (default us, eredar).",
+	help: " - character [realm] [region] - get the raider.io score and link for the given character. You can pass the realm and region as well (default eredar, us).",
 	init: initRio,
 	run:  runRio,
 }
@@ -40,12 +42,12 @@ func runRio(s *discordgo.Session, m *discordgo.MessageCreate, params []string) e
 	server := "eredar"
 	char := params[0]
 	if len(params) == 3 {
-		region = params[0]
+		region = params[2]
 		server = params[1]
-		char = params[2]
+		char = params[0]
 	} else if len(params) == 2 {
-		server = params[0]
-		char = params[1]
+		server = params[1]
+		char = params[0]
 	}
 
 	u := fmt.Sprintf("https://raider.io/api/v1/characters/profile?region=%s&realm=%s&name=%s&fields=gear,mythic_plus_scores", region, server, char)
@@ -56,12 +58,14 @@ func runRio(s *discordgo.Session, m *discordgo.MessageCreate, params []string) e
 	defer resp.Body.Close()
 
 	c := raiderIOChar{}
-	dec := json.NewDecoder(resp.Body)
+	b := &bytes.Buffer{}
+	_, err = b.ReadFrom(resp.Body)
+	logrus.Infof("%s", b.String())
+	dec := json.NewDecoder(b)
 	err = dec.Decode(&c)
 	if err != nil {
 		return err
 	}
-
 	reply(s, m, fmt.Sprintf("%v: ilvl - %v, score - %v\n%v",
 		c.Name, c.Gear["item_level_total"], c.MPScores["all"], c.Profile))
 
